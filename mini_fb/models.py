@@ -32,6 +32,49 @@ class Profile(models.Model): #class MUST inheirit
     def get_absolute_url(self) -> str:
         '''Return the URL to redirect to after successfully submitting form.'''
         return reverse('show_all')
+    
+
+    def get_friends(self):
+        '''Return a list of this profile's friends as Profile instances, excluding self.'''
+        #friends where self is profile1
+        friendsCaseOne = Friend.objects.filter(profile1=self).values_list('profile2', flat=True)
+        #friends where self is profile2
+        friendsCaseTwo = Friend.objects.filter(profile2=self).values_list('profile1', flat=True)
+            #QuereySet returns id as a list of tuples which does not work for comparrison (we should use a better pk for profiles)
+        
+        friend_ids = set(friendsCaseOne) | set(friendsCaseTwo)
+        friend_ids.discard(self.id)
+        # Retrieve the corresponding Profile objects and convert to a list of Profiles rather than a Querey Set
+        return list(Profile.objects.filter(id__in=friend_ids))
+    
+    def add_friend(self, other):
+        '''Add a friend relationship with another Profile instance.'''
+        # Check that we're not trying to friend ourselves
+        invalidFriendship = Friend.objects.filter(profile1=self, profile2=other).exists() | Friend.objects.filter(profile1=other, profile2=self).exists()
+        if(self == other):
+            invalidFriendship = True
+
+        if not invalidFriendship:
+            newFriend = Friend.objects.create(profile1=self, profile2=other)
+            newFriend.save()
+    
+    def get_friend_suggestions(self):
+        '''Return a list of profiles that are suggested friends with this profile'''
+        existingFriends = set(Friend.objects.filter(profile1=self).values_list('profile1_id', flat=True)) | set(Friend.objects.filter(profile2=self).values_list('profile2_id', flat=True))
+        suggestions = Profile.objects.exclude(id__in=existingFriends).exclude(id=self.id)
+        return list(suggestions)
+    
+    def get_news_feed(self):
+        '''Return a list of StatusMessages for this Profile and its friends.'''
+        friendProfiles = self.get_friends()
+
+        # Include self in the list of IDs to get messages from self and friends
+        friendProfiles.append(self.id)  # Add self to the list
+
+        #ordered by desending timestamp
+        feed = StatusMessage.objects.filter(profile_id__in=friendProfiles).order_by('-timestamp')
+
+        return list(feed)
 
 class StatusMessage(models.Model):
     '''Encapsulate the idea of a status message for some profile.'''
@@ -56,3 +99,13 @@ class Image(models.Model):
     status_message = models.ForeignKey("StatusMessage", on_delete=models.CASCADE)
     image_file = models.ImageField(blank=True)
     timestamp = models.DateTimeField(auto_now=True)
+
+class Friend(models.Model):
+    '''Encapsulate the idea of a friendship between two profiles'''
+    profile1 = models.ForeignKey("Profile", on_delete=models.CASCADE, related_name="profile1")
+    profile2 = models.ForeignKey("Profile", on_delete=models.CASCADE, related_name="profile2")
+    timestamp = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        '''Return a string representation of this Friend object.'''
+        return f'{self.profile1} & {self.profile2}'

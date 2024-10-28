@@ -7,7 +7,7 @@ import profile
 from django.forms import BaseModelForm
 from django.http import HttpResponse
 from .models import *
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, View
 from django.views.generic.edit import CreateView
 from .forms import *
 from django.urls import reverse
@@ -145,3 +145,43 @@ class DeleteStatusMessageView(DeleteView):
         
         # reverse to show the article page
         return reverse('show_profile', kwargs={'pk':message.pk})
+
+from django.shortcuts import redirect
+class CreateFriendView(View):
+    '''A view to create a new friend for a user.'''
+    def dispatch(self, request, *args, **kwargs):
+        pk = kwargs.get('pk') 
+        other_pk = kwargs.get('other_pk')
+        
+        # Retrieve the Profile instances
+        profile = Profile.objects.get(id=pk)
+        otherProfile = Profile.objects.get(id=other_pk)
+
+        profile.add_friend(otherProfile)
+
+        # Redirect back to the profile page
+        return redirect(reverse('show_profile', kwargs={'pk': pk}))
+
+class ShowFriendSuggestionsView(DetailView):
+    '''Show suggestions for a given profile'''
+    model = Profile
+    template_name = 'mini_fb/friend_suggestions.html'
+    context_object_name = 'profile'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get friend suggestions for the current profile
+        context['suggestions'] = self.object.get_friend_suggestions()
+        return context
+
+class ShowNewsFeedView(DetailView):
+    '''Show news feed for a given profile'''
+    model = Profile
+    template_name = 'mini_fb/news_feed.html'
+    context_object_name = 'profile'  # This will be the Profile instance
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get the news feed for the current profile
+        context['news_feed'] = self.object.get_news_feed()
+        return context

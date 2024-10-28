@@ -64,5 +64,23 @@
             </tr>
         {% endfor %}
     </table>
+    <h2> Friends of {{profile.firstName}} {{profile.lastName}}:</h2>
+    <table>
+        <!--Display a list of all Friend for this profile-->
+        {% for friend in profile.get_friends %}
+            <tr>
+                <td style="border: none">
+                    <a href="{% url 'show_profile' friend.id %}">
+                        {{ friend.firstName }} {{ friend.lastName }}
+                    </a>
+                </td>
+                <td style="border: none">
+                    <img src='{{friend.profileImageURL}}' alt='{{friend.profileImageURL}}'>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
 </div>
+<a href="{% url 'friend_suggestions' profile.pk %}">View Friend Suggestions</a>
+<a href="{% url 'news_feed' profile.pk %}">View News Feed</a>
 {% endblock %}

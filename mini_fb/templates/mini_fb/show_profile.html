@@ -37,8 +37,8 @@
     </table>
 </div>
 <div>
-    <a href="{% url 'update_profile' profile.pk %}">Update Profile!</a>
-    <a href="{% url 'create_status' profile.pk %}">Add Status Message!</a>
+    <a href="{% url 'update_profile' %}">Update Profile!</a>
+    <a href="{% url 'create_status' %}">Add Status Message!</a>
     <h2> Status Messages for {{profile.firstName}} {{profile.lastName}}:</h2>
     <table>
         <!--Display a list of all StatusMessages for this profile-->
@@ -81,6 +81,6 @@
         {% endfor %}
     </table>
 </div>
-<a href="{% url 'friend_suggestions' profile.pk %}">View Friend Suggestions</a>
-<a href="{% url 'news_feed' profile.pk %}">View News Feed</a>
+<a href="{% url 'friend_suggestions' %}">View Friend Suggestions</a>
+<a href="{% url 'news_feed' %}">View News Feed</a>
 {% endblock %}

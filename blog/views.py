@@ -3,8 +3,12 @@
 # Define the views for the blog app:
 #from django.shortcuts import render
 import random
+
+from django.http import HttpRequest
+from django.http.response import HttpResponse as HttpResponse
 from .models import *
 from django.views.generic import ListView, DetailView #ListView is a custom component which displays a list of the model
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 #class-based view
 class ShowAllView(ListView):
@@ -12,6 +16,10 @@ class ShowAllView(ListView):
     model = Article # retrieve objects of type Article from the database
     template_name = 'blog/show_all.html'
     context_object_name = 'articles' # how to find the data in the template file (context variable)
+
+    def dispatch(self, *args, **kwargs):
+        print(f"ShowAllView.dispatch; self.request.user={self.request.user}")
+        return super().dispatch(*args, **kwargs)
 
 # The difference between a ListView and a DetailView:
 #   ListView shows all objects
@@ -87,25 +95,42 @@ class CreateCommentView(CreateView):
         #return reverse('show_all')
         return reverse('article', kwargs={'pk': self.kwargs['pk']})
 
-class CreateArticleView(CreateView):
+#Multiple Inheiritance!
+#Which of the same method determines whose is kept? It is in order of the parameters passed (LoginRequiredMixin > CreateView)
+class CreateArticleView(LoginRequiredMixin, CreateView):
     '''A view to create a new Article and save it to the database.'''
     form_class = CreateArticleForm
     template_name = "blog/create_article_form.html"
+
+    def get_login_url(self) -> str:
+        '''Return the URL to the login page.'''
+        return reverse('login')
     
     def form_valid(self, form):
         '''
         Handle the form submission to create a new Article object.
         '''
         print(f'CreateArticleView: form.cleaned_data={form.cleaned_data}')
+
+        # find the logged in user
+        user = self.request.user
+        print(f"CreateArticleView user={user} article.user={user}")
+        # attach user to form instance (Article object):
+        form.instance.user = user
+
         # delegate work to the superclass version of this method
         return super().form_valid(form)
 
 from django.views.generic.edit import UpdateView
-class UpdateArticleView(UpdateView):
+class UpdateArticleView(LoginRequiredMixin, UpdateView):
     '''A view to update an Article and save it to the database.'''
     form_class = UpdateArticleForm
     template_name = "blog/update_article_form.html"
     model = Article ## add this model and the QuerySet will automatically find instance by PK
+
+    def get_login_url(self) -> str:
+        '''Return the URL to the login page.'''
+        return reverse('login')
     
     def form_valid(self, form):
         '''
@@ -133,3 +158,38 @@ class DeleteCommentView(DeleteView):
         # reverse to show the article page
         return reverse('article', kwargs={'pk':article.pk})
 
+from django.contrib.auth.forms import UserCreationForm ## NEW
+from django.contrib.auth.models import User ## NEW
+from django.contrib.auth import login # NEW
+from django.shortcuts import redirect
+
+class RegistrationView(CreateView):
+    '''
+    show/process form for account registration
+    '''
+    template_name = 'blog/register.html'
+    form_class = UserCreationForm
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        '''Handle the User creation part of the form submission'''
+        # handle the POST:
+        if self.request.POST:
+            # reconstruct the UserCreationForm from the POST data
+            user_form = UserCreationForm(self.request.POST)
+
+            if not user_form.is_valid():
+                # if the form is invalid, return the error to the template
+                return super().dispatch(request, *args, **kwargs)
+            # create the user and login
+            # NOTICE for mini_fb: attach the user to the Profile instance object so that it 
+            # can be saved to the database in super().form_valid()
+            user = user_form.save()    
+
+            print(f"RegistrationView.form_valid(): Created user= {user}")   
+            login(self.request, user)
+            print(f"RegistrationView.form_valid(): User is logged in")   
+            
+            return redirect(reverse('show_all_articles'))
+        
+        # GET: handled by super class
+        return super().dispatch(*args, **kwargs)

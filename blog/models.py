@@ -5,6 +5,7 @@
 #
 from django.db import models
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 #Each model is a class
 class Article(models.Model): #class MUST inheirit 
@@ -16,6 +17,8 @@ class Article(models.Model): #class MUST inheirit
     published = models.DateTimeField(auto_now=True) #auto_now=True sets the time to now upon Model instantiation
     #image_url = models.URLField(blank=True) ## new
     image_file = models.ImageField(blank=True) # an actual image
+    # data attributes of a Article:
+    user = models.ForeignKey(User, on_delete=models.CASCADE) ## NEW
     
     #Default method so name MUST match (Admin can display this rather than the unique ID)
     def __str__(self):

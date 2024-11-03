@@ -7,7 +7,7 @@
         {% for s in suggestions %}
             <tr>
                 <td> {{ s.firstName }} {{ s.lastName }} </td>
-                <td> <a href="{% url 'create_friend' profile.pk s.pk %}">Add Friend</a> </td>
+                <td> <a href="{% url 'create_friend' s.pk %}">Add Friend</a> </td>
             </tr>
         {% endfor %}
     </table>

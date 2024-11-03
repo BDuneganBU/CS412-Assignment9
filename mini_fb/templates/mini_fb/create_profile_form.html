@@ -9,12 +9,22 @@
 {% csrf_token %}
     <table>
         <!--Follows the same form implementation as lecture-->
+        <!-- fields from CreateProfileForm -->
         {% for field in form %}
             <tr>
                 <th>{{field.name}}</th>
                 <td>{{field}}</td>
             </tr>
         {% endfor %}
+        
+        <!-- fields from UserCreationForm -->
+        {% for field in user_creation_form %}
+            <tr>
+                <th>{{ field.label }}</th>
+                <td>{{ field }}</td>
+            </tr>
+        {% endfor %}
+
         <tr>
             <td></td>
             <td>

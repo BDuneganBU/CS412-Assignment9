@@ -5,6 +5,7 @@
 #
 from django.db import models
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 #Each model is a class
 class Profile(models.Model): #class MUST inheirit 
@@ -16,6 +17,8 @@ class Profile(models.Model): #class MUST inheirit
     city = models.TextField(blank=False)
     email = models.TextField(blank=False)
     profileImageURL = models.URLField(blank=True)
+    # foreign key to User model creating many-to-one Profile-to-User
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     
     #Default method so name MUST match (Admin can display this rather than the unique ID)
     def __str__(self):
